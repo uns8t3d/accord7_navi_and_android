@@ -56,7 +56,7 @@ void NaviHVAC::printMessage(byte* message) {
   Serial.print("Message: ");
   for (int i = 0; i < CLIMAT_MSG_LEN; i++) {
       Serial.print("0x");
-      Serial.print(message[i], HEX); // Выводим байты в шестнадцатеричном формате
+      Serial.print(message[i], HEX);
       Serial.print(" ");
   }
   Serial.println();
