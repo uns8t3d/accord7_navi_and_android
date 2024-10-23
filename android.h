@@ -6,6 +6,15 @@
 const byte MESSAGE_LENGTH = 6;
 const byte START_BYTE = 0x2E;
 
+enum rx_state
+{
+	RX_WAIT_START,
+	RX_LEN,
+	RX_CMD,
+	RX_DATA,
+	RX_CRC
+};
+
 struct Time {
   int hours;
   int minutes;

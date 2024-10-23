@@ -3,49 +3,28 @@
 #include <SoftwareSerial.h>
 #include "EEPROM.h"
 
-const int MAX_BUFFER_SIZE = 37;
+#define RX_BUFFER_SIZE 64
+
+SoftwareSerial mySerial(8, 9);
+Time currentTime;
+
+bool allowSoftwareSerialRead = true;
+
+static uint8_t rx_buffer[RX_BUFFER_SIZE];
+static uint8_t rx_idx = 0;
+static uint8_t rx_state = RX_WAIT_START;
+
+uint8_t selectedMode = 0x00;
+uint8_t selectedFanSpeed = 0x00;
+uint8_t acOn = 0x00;
+
 char title[70];
-uint8_t buffer[MAX_BUFFER_SIZE];
 bool receivingTitle = false;
 bool timeInitialized = false;
 bool climateStateRestored = false;
 bool musicOn = false;
 unsigned long int musicOnTimer = 0;
 int titleIndex = 0;
-int bufferIndex = 0;
-int messageLength = 0;
-bool isCollecting = false;
-int CLOCK = 1;
-int MUSIC = 2;
-int MUSIC_ON = 3;
-int CLIMATE = 4;
-int MESSAGE_TYPE = 0;
-
-// uint8_t canbox_message[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
-
-enum rx_state
-{
-	RX_WAIT_START,
-	RX_LEN,
-	RX_CMD,
-	RX_DATA,
-	RX_CRC
-};
-#define RX_BUFFER_SIZE 64
-static uint8_t rx_buffer[RX_BUFFER_SIZE];
-static uint8_t rx_idx = 0;
-static uint8_t rx_state = RX_WAIT_START;
-
-Time currentTime;
-
-uint8_t selectedMode = 0x00;
-uint8_t selectedFanSpeed = 0x00;
-uint8_t acOn = 0x00;
-
-byte message[12] = {0x2E, 0x01, 0x08, 0x16, 0x89, 0x11, 0x01, 0x00, 0x00, 0x00, 0x00, 0x45};
-const unsigned int MAX_MESSAGE_LENGTH = 6;
-SoftwareSerial mySerial(8, 9);
-byte messageBuffer[MESSAGE_LENGTH];
 
 extern int NONE = 0;
 extern int MODE1 = 1;
@@ -76,7 +55,7 @@ int Android::read() {
     createMessage();        
     climateStateRestored = true;
   }
-  if (mySerial.available()) {
+  if (allowSoftwareSerialRead && mySerial.available()) {
     uint8_t byteRead = mySerial.read();
     int result = canbox_process(byteRead);
     return result;
@@ -89,7 +68,7 @@ int Android::canbox_process(uint8_t ch)
 	switch (rx_state) {
 		case RX_WAIT_START:
       memset(rx_buffer, 0, sizeof(rx_buffer));
-			if (ch != 0x2e)
+			if (ch != START_BYTE)
 				break;
 			rx_idx = 0;
 			rx_buffer[rx_idx++] = ch;
@@ -119,37 +98,34 @@ int Android::canbox_process(uint8_t ch)
 		case RX_CRC:
 			rx_buffer[rx_idx++] = ch;
       rx_buffer[rx_idx++] = 0xFF;
-      // printMessage();
 			rx_state = RX_WAIT_START;
       int result = processMessage(rx_buffer, sizeof(rx_buffer));
       return result;
 	}
-
 	if (rx_idx > RX_BUFFER_SIZE)
 		rx_state = RX_WAIT_START;
-    // memset(rx_buffer, 0, sizeof(rx_buffer));
   return 0;
 }
+
 uint8_t Android::canbox_checksum(uint8_t * buf, uint8_t len)
 {
 	uint8_t sum = 0;
 	for (uint8_t i = 0; i < len; i++)
 		sum += buf[i];
-
 	sum = sum ^ 0xff;
-
 	return sum;
 }
 
 void Android::send_canbox_msg(uint8_t type, uint8_t * msg, uint8_t size)
 {
-	uint8_t buf[4/*header type size ... chksum*/ + size];
+	uint8_t buf[4 + size];
 	buf[0] = 0x2E;
 	buf[1] = type;
 	buf[2] = size;
 	memcpy(buf + 3, msg, size);
 	buf[3 + size] = canbox_checksum(buf + 1, size + 2);
 	mySerial.write(buf, sizeof(buf));
+  allowSoftwareSerialRead = true;
 }
 
 int Android::processMessage(const uint8_t* message, int length) {
@@ -165,75 +141,84 @@ int Android::processMessage(const uint8_t* message, int length) {
           case 0xAC:
             switch (message[4]) {
               case 0x01:
+                allowSoftwareSerialRead = false;
                 acOn = 0x40;
                 saveToEEPROM(acOn, 0);
-                return 5;
+                return AC_ON;
               case 0x02:
+                allowSoftwareSerialRead = false;
                 acOn = 0x00;
                 saveToEEPROM(acOn, 0);
-                return 6;
+                return AC_OFF;
               case 0x03:
+                allowSoftwareSerialRead = false;
                 selectedMode = 0x40;
                 saveToEEPROM(selectedMode, 1);
-                return 1;
+                return MODE1;
               case 0x04:
+                allowSoftwareSerialRead = false;
                 selectedMode = 0x60;
                 saveToEEPROM(selectedMode, 1);
-                return 2;
+                return MODE2;
               case 0x05:
+                allowSoftwareSerialRead = false;
                 selectedMode = 0x20;
                 saveToEEPROM(selectedMode, 1);
-                return 3;
+                return MODE3;
               case 0x06:
+                allowSoftwareSerialRead = false;
                 selectedMode = 0xA0;
                 saveToEEPROM(selectedMode, 1);
-                return 4;
+                return MODE4;
             }
             break;
           case 0xAD:
             switch (message[4]) {
               case 0x01:
+                allowSoftwareSerialRead = false;
                 selectedFanSpeed = 0x02;
                 saveToEEPROM(selectedFanSpeed, 2);
-                return 11;
+                return FANSPEED1;
               case 0x02:
+                allowSoftwareSerialRead = false;
                 selectedFanSpeed = 0x02;
                 saveToEEPROM(selectedFanSpeed, 2);
-                return 11;
+                return FANSPEED1;
               case 0x03:
+                allowSoftwareSerialRead = false;
                 selectedFanSpeed = 0x03;
                 saveToEEPROM(selectedFanSpeed, 2);
-                return 12;
+                return FANSPEED2;
               case 0x04:
+                allowSoftwareSerialRead = false;
                 selectedFanSpeed = 0x04;
                 saveToEEPROM(selectedFanSpeed, 2);
-                return 13;
+                return FANSPEED3;
               case 0x05:
+                allowSoftwareSerialRead = false;
                 selectedFanSpeed = 0x05;
                 saveToEEPROM(selectedFanSpeed, 2);
-                return 14;
+                return FANSPEED4;
               case 0x06:
+                allowSoftwareSerialRead = false;
                 selectedFanSpeed = 0x06;
                 saveToEEPROM(selectedFanSpeed, 2);
-                return 15;
+                return FANSPEED5;
               case 0x07:
+                allowSoftwareSerialRead = false;
                 selectedFanSpeed = 0x06;
                 saveToEEPROM(selectedFanSpeed, 2);
-                return 15;
+                return FANSPEED5;
             }
             break;
         }
       }
       break;
-    case 0xCB:
-      // if (message[3] != 0x02 || message[3] != 0x04) {
-      //   break;
-      // }      
+    case 0xCB:     
       if (message[4] != 0xA7 && message[3] != 0x03) {         
-        // for (int i = 0; i < 37; i++) {
-        //   Serial.print(message[i], HEX);                    
-        //   Serial.print(" ");                    
-        // }        
+        if (titleIndex == 0) {
+          memset(title, 0, sizeof(title));
+        }
         if (message[3] == 0x04) {
           receivingTitle = true;
         }
@@ -267,13 +252,14 @@ int Android::processMessage(const uint8_t* message, int length) {
       musicOnTimer = millis();
       break;      
   }
-  if (musicOn && millis() - musicOnTimer >= 2000) {
+  if (musicOn && millis() - musicOnTimer >= 1100) {
     musicOn = false;
   }
   return 0;
 }
 
 void Android::createMessage() {
+    allowSoftwareSerialRead = false;
     uint8_t buffer[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
     buffer[0] |= acOn;
     buffer[1] |= selectedMode;

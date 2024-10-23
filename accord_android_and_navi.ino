@@ -33,9 +33,6 @@ const unsigned long interval = 300;
 unsigned long updateSubdisplayInterval = 0;
 const int displayWidth = 8;
 int position = 0;
-bool show_semicolon = false;
-int lastHour;
-int lastMinute;
 
 void setup() {
   android.begin();  
