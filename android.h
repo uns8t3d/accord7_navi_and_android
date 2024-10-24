@@ -39,5 +39,6 @@ class Android {
     Time getClock();
     bool musicAvailable();
     char* getTrackName();
+    void defaultState();
 };
 #endif

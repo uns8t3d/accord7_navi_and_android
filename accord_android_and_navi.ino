@@ -29,13 +29,16 @@ uint16_t dTemp;
 uint16_t pTemp;
 unsigned long int timer = 0;
 unsigned long previousMillis = 0;
-const unsigned long interval = 300; 
+const unsigned long interval = 300;
 unsigned long updateSubdisplayInterval = 0;
 const int displayWidth = 8;
 int position = 0;
 
+bool wasAcOn = false;
+bool actionPerformed = false;
+
 void setup() {
-  android.begin();  
+  android.begin();
   subDisplay.begin();
   hvac.begin();
   // Serial.begin(38400);  // initialize Serial. This is the only baud rate that works with
@@ -43,7 +46,7 @@ void setup() {
 
 void loop() {
   hvac.read();
-  int command = android.read();  
+  int command = android.read();
   if (command != 0) {
     hvac.sendCommand(commands[command]);
     android.createMessage();
@@ -54,35 +57,38 @@ void loop() {
   }
 }
 
-void renderSubdisplay() {  
+void renderSubdisplay() {
   subDisplay.clear();
   if (hvac.isAcOn()) {
+    wasAcOn = true;
+    actionPerformed = false;
     dTemp = hvac.getDTemp();
     pTemp = hvac.getPTemp();
-
-    subDisplay.setClimatTemp(dTemp, pTemp);  
+    subDisplay.setClimatTemp(dTemp, pTemp);
+  } else if (wasAcOn && !actionPerformed) {
+    android.defaultState();
+    actionPerformed = true;
+    wasAcOn = false;
   }
-  if (millis() - timer >= 1000) {
-    if (android.clockAvailable()) {
-       time = android.getClock();
-       subDisplay.clock(time.hours, time.minutes, time.seconds % 2 == 0);
-    }
+  if (android.clockAvailable()) {
+      time = android.getClock();
+      subDisplay.clock(time.hours, time.minutes, time.seconds % 2 == 0);
   }
   if (android.musicAvailable()) {
     char* text = android.getTrackName();
     int textLength = strlen(text);
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
-    previousMillis = currentMillis;
-    char displayBuffer[displayWidth];
-    for (int i = 0; i < displayWidth; i++) {
-      int charPosition = (position + i) % textLength;
-      displayBuffer[i] = text[charPosition];
+      previousMillis = currentMillis;
+      char displayBuffer[displayWidth];
+      for (int i = 0; i < displayWidth; i++) {
+        int charPosition = (position + i) % textLength;
+        displayBuffer[i] = text[charPosition];
+      }
+      displayBuffer[displayWidth] = '\0';
+      subDisplay.text(displayBuffer);
+      position = (position + 1) % textLength;
     }
-    displayBuffer[displayWidth] = '\0';
-    subDisplay.text(displayBuffer);
-    position = (position + 1) % textLength;
-  }  
-  }      
+  }
   subDisplay.render();
 }

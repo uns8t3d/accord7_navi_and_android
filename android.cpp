@@ -18,7 +18,7 @@ uint8_t selectedMode = 0x00;
 uint8_t selectedFanSpeed = 0x00;
 uint8_t acOn = 0x00;
 
-char title[70];
+char title[72];
 bool receivingTitle = false;
 bool timeInitialized = false;
 bool climateStateRestored = false;
@@ -231,6 +231,10 @@ int Android::processMessage(const uint8_t* message, int length) {
         if (message[3] == 0x02) {
           title[titleIndex] = ' ';
           titleIndex += 1;
+          title[titleIndex] = ' ';
+          titleIndex += 1;
+          title[titleIndex] = ' ';
+          titleIndex += 1;
         }  
         if (message[3] == 0x04) {
           title[titleIndex] = ' ';  
@@ -287,6 +291,17 @@ bool Android::musicAvailable() {
 
 char* Android::getTrackName() {
   return title;
+}
+
+void Android::defaultState() {
+  acOn = 0x00;
+  saveToEEPROM(acOn, 0);
+  selectedMode = 0x00;
+  saveToEEPROM(selectedMode, 1);  
+  selectedFanSpeed = 0x00;
+  saveToEEPROM(selectedFanSpeed, 2);
+  uint8_t buffer[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
+  send_canbox_msg(0x21, buffer, sizeof(buffer));
 }
 
 void Android::saveToEEPROM(uint8_t value, int index) {
