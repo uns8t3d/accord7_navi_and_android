@@ -2,8 +2,7 @@
 #include "navi_subdisplay.h"
 #include "navi_hvac.h"
 
-#define DEFROST_ON_ 0x0801
-#define DEFROST_OFF 0x0800
+#define NOTHING 0x0000
 #define WIND_SHIELD_CENTER 0x0301
 #define WIND_SHIELD_CENTER_FLOOR 0x0302
 #define WIND_SHIELD_FLOOR 0x0303
@@ -15,10 +14,11 @@
 #define FAN_SPEED_5 0x0505
 #define AC_ON 0x0201
 #define AC_OFF 0x0200
-#define REC_ON 0x0B01
-#define REC_OFF 0x0B00
 
-uint16_t commands[16] = {0x0000, 0x0301, 0x0302, 0x0303, 0x0304, 0x0201, 0x0200, 0x0000, 0x0000, 0x0000, 0x0000, 0x0501, 0x0502, 0x0503, 0x0504, 0x0505};
+uint16_t commands[16] = {
+    NOTHING, WIND_SHIELD_CENTER, WIND_SHIELD_CENTER, WIND_SHIELD_FLOOR, WIND_SHIELD_DEFROST_FLOOR, AC_ON, AC_OFF, NOTHING, NOTHING,
+    NOTHING, NOTHING, FAN_SPEED_1, FAN_SPEED_2, FAN_SPEED_3, FAN_SPEED_4, FAN_SPEED_5
+  };
 
 NaviSubDisplay subDisplay;
 NaviHVAC hvac;
