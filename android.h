@@ -40,5 +40,6 @@ class Android {
     bool musicAvailable();
     char* getTrackName();
     void defaultState();
+    char* getTrackDisplayNamePartial();
 };
 #endif

@@ -28,12 +28,7 @@ Time time;
 uint16_t dTemp;
 uint16_t pTemp;
 unsigned long int timer = 0;
-unsigned long previousMillis = 0;
-const unsigned long interval = 300;
 unsigned long updateSubdisplayInterval = 0;
-const int displayWidth = 8;
-int position = 0;
-
 bool wasAcOn = false;
 bool actionPerformed = false;
 
@@ -75,20 +70,8 @@ void renderSubdisplay() {
       subDisplay.clock(time.hours, time.minutes, time.seconds % 2 == 0);
   }
   if (android.musicAvailable()) {
-    char* text = android.getTrackName();
-    int textLength = strlen(text);
-    unsigned long currentMillis = millis();
-    if (currentMillis - previousMillis >= interval) {
-      previousMillis = currentMillis;
-      char displayBuffer[displayWidth];
-      for (int i = 0; i < displayWidth; i++) {
-        int charPosition = (position + i) % textLength;
-        displayBuffer[i] = text[charPosition];
-      }
-      displayBuffer[displayWidth] = '\0';
-      subDisplay.text(displayBuffer);
-      position = (position + 1) % textLength;
-    }
+    char* displayBuffer = android.getTrackDisplayNamePartial();
+    subDisplay.text(displayBuffer);
   }
   subDisplay.render();
 }

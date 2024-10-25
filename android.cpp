@@ -20,11 +20,17 @@ uint8_t acOn = 0x00;
 
 char title[72];
 bool receivingTitle = false;
-bool timeInitialized = false;
-bool climateStateRestored = false;
 bool musicOn = false;
 unsigned long int musicOnTimer = 0;
 int titleIndex = 0;
+unsigned long previousSubDisplayUpdate = 0;
+const unsigned long updateSubdisplayMusicInterval = 300;
+int titlePosition = 0;
+const int SUBDISPLAY_WIDTH = 8;
+char displayBuffer[SUBDISPLAY_WIDTH+1];
+
+bool timeInitialized = false;
+bool climateStateRestored = false;
 
 extern int NONE = 0;
 extern int MODE1 = 1;
@@ -247,6 +253,7 @@ int Android::processMessage(const uint8_t* message, int length) {
         if (receivingTitle) {
           receivingTitle = false;
           titleIndex = 0;
+          titlePosition = 0;
         }        
         break;
       }
@@ -291,6 +298,22 @@ bool Android::musicAvailable() {
 
 char* Android::getTrackName() {
   return title;
+}
+
+char* Android::getTrackDisplayNamePartial() {
+  int textLength = strlen(title);
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousSubDisplayUpdate >= updateSubdisplayMusicInterval) {       
+    previousSubDisplayUpdate = currentMillis;
+    for (int i = 0; i < SUBDISPLAY_WIDTH && i < textLength; i++) {
+      int charPosition = (titlePosition + i) % textLength;
+      displayBuffer[i] = title[charPosition];
+    }
+    displayBuffer[SUBDISPLAY_WIDTH] = '\0';
+    titlePosition = (titlePosition + 1) % textLength;
+    return displayBuffer;
+  }  
+  return displayBuffer;
 }
 
 void Android::defaultState() {
