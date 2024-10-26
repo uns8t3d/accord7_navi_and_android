@@ -18,6 +18,10 @@ unsigned long updateSubdisplayInterval = 0;
 bool wasAcOn = false;
 bool actionPerformed = false;
 
+// variables to prevent frequent command sending
+unsigned long int command_send_timer = 0;
+const int COMMAND_SEND_TIMEOUT = 1000;
+
 void setup() {
   android.begin();
   subDisplay.begin();
@@ -29,8 +33,11 @@ void loop() {
   hvac.read();
   int command = android.read();
   if (command != 0) {
-    hvac.sendCommand(COMMANDS[command]);
-    android.createMessage();
+    if (millis() - command_send_timer >= COMMAND_SEND_TIMEOUT) {
+      hvac.sendCommand(COMMANDS[command]);
+      android.createMessage();
+      command_send_timer = millis();
+    }
   }
   if (millis() - updateSubdisplayInterval >= 300) {
     renderSubdisplay();

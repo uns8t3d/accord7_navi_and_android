@@ -103,7 +103,7 @@ void NaviHVAC::sendCommand(uint16_t command) {
   pinMode(FRAME_PIN, OUTPUT);
   digitalWrite(CONTROL_A, HIGH);  
   digitalWrite(FRAME_PIN, LOW);
-  delay(300);
+  delay(100);
   while(frameIsFree);
   Serial.write(climatCmd, CLIMAT_CMD_LEN);
   Serial.flush();
