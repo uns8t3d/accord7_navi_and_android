@@ -3,9 +3,15 @@
 #include "navi_hvac.h"
 #include <SPI.h>
 
-volatile bool frameIsFree = false;
+uint16_t COMMANDS[16] = {
+    NOTHING, WIND_SHIELD_CENTER, WIND_SHIELD_CENTER, WIND_SHIELD_FLOOR, WIND_SHIELD_DEFROST_FLOOR, AC_ON, AC_OFF, NOTHING, NOTHING,
+    NOTHING, NOTHING, FAN_SPEED_1, FAN_SPEED_2, FAN_SPEED_3, FAN_SPEED_4, FAN_SPEED_5
+};
+
 byte climatState[CLIMAT_MSG_LEN];
 byte climatLastState[CLIMAT_MSG_LEN];
+
+volatile bool frameIsFree = false;
 bool startReadState = false;
 
 byte climatCmd[CLIMAT_CMD_LEN] = { 0x66, 0x0A, 0x98, 0xFF, 0x40, 0x41, 0x59, 0x26, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -59,9 +65,6 @@ void NaviHVAC::printMessage(byte* message) {
       Serial.print(message[i], HEX);
       Serial.print(" ");
   }
-  Serial.println();
-  Serial.print("pin is free: ");
-  Serial.print(digitalRead(FRAME_PIN));
   Serial.println();
 }
 

@@ -2,24 +2,6 @@
 #include "navi_subdisplay.h"
 #include "navi_hvac.h"
 
-#define NOTHING 0x0000
-#define WIND_SHIELD_CENTER 0x0301
-#define WIND_SHIELD_CENTER_FLOOR 0x0302
-#define WIND_SHIELD_FLOOR 0x0303
-#define WIND_SHIELD_DEFROST_FLOOR 0x0304
-#define FAN_SPEED_1 0x0501
-#define FAN_SPEED_2 0x0502
-#define FAN_SPEED_3 0x0503
-#define FAN_SPEED_4 0x0504
-#define FAN_SPEED_5 0x0505
-#define AC_ON 0x0201
-#define AC_OFF 0x0200
-
-uint16_t commands[16] = {
-    NOTHING, WIND_SHIELD_CENTER, WIND_SHIELD_CENTER, WIND_SHIELD_FLOOR, WIND_SHIELD_DEFROST_FLOOR, AC_ON, AC_OFF, NOTHING, NOTHING,
-    NOTHING, NOTHING, FAN_SPEED_1, FAN_SPEED_2, FAN_SPEED_3, FAN_SPEED_4, FAN_SPEED_5
-  };
-
 NaviSubDisplay subDisplay;
 NaviHVAC hvac;
 Android android;
@@ -27,8 +9,12 @@ Time time;
 
 uint16_t dTemp;
 uint16_t pTemp;
+
+// optimizations for subdisplay render
 unsigned long int timer = 0;
 unsigned long updateSubdisplayInterval = 0;
+
+// variables for restoration of climate default state
 bool wasAcOn = false;
 bool actionPerformed = false;
 
@@ -36,14 +22,14 @@ void setup() {
   android.begin();
   subDisplay.begin();
   hvac.begin();
-  // Serial.begin(38400);  // initialize Serial. This is the only baud rate that works with
+  // Serial.begin(38400);  // initialize Serial. This is the only baud rate that works with. Only for debug purpose, should be disabled in prod
 }
 
 void loop() {
   hvac.read();
   int command = android.read();
   if (command != 0) {
-    hvac.sendCommand(commands[command]);
+    hvac.sendCommand(COMMANDS[command]);
     android.createMessage();
   }
   if (millis() - updateSubdisplayInterval >= 300) {
