@@ -2,6 +2,7 @@
 #ifndef android_h
 #define android_h
 #include <Arduino.h>
+#include "can.h"
 
 #define RX_BUFFER_SIZE 64
 #define NONE 0
@@ -63,6 +64,7 @@ class Android {
     void sendMessage(uint8_t type, uint8_t * msg, uint8_t size);
     void defaultState();
     void createMessage();
+    void createDoorsMessage(CarDoorsState doorsState);
     
     void setTime(Time &time, int h, int m, int s);
     bool clockAvailable();

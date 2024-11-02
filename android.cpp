@@ -280,6 +280,23 @@ void Android::createMessage() {
     sendMessage(0x21, buffer, sizeof(buffer));       
 }
 
+void Android::createDoorsMessage(CarDoorsState doorsState) {
+  uint8_t state = 0;
+  if (doorsState.bonnet)
+		state |= 0x4;
+	if (doorsState.trunk)
+		state |= 0x8;
+	if (doorsState.rl_door)
+		state |= 0x10;
+	if (doorsState.rr_door)
+		state |= 0x20;
+	if (doorsState.fl_door)
+		state |= 0x40;
+	if (doorsState.fr_door)
+		state |= 0x80;
+  sendMessage(0x24, &state, 1);     
+}
+
 void Android::setTime(Time &time, int h, int m, int s) {
   time.hours = h;
   time.minutes = m;

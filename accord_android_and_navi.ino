@@ -1,10 +1,12 @@
 #include "android.h"
 #include "navi_subdisplay.h"
 #include "navi_hvac.h"
+#include "can.h"
 
 NaviSubDisplay subDisplay;
 NaviHVAC hvac;
 Android android;
+BCAN can;
 Time time;
 
 uint16_t dTemp;
@@ -26,18 +28,20 @@ void setup() {
   android.begin();
   subDisplay.begin();
   hvac.begin();
+  can.begin();
   // Serial.begin(38400);  // initialize Serial. This is the only baud rate that works with. Only for debug purpose, should be disabled in prod
 }
 
 void loop() {
+  bool isRead = can.read();
+  if (isRead) {
+    android.createDoorsMessage(can.getDoorsState());    
+  }
   hvac.read();
   int command = android.read();
   if (command != 0) {
-    if (millis() - command_send_timer >= COMMAND_SEND_TIMEOUT) {
       hvac.sendCommand(COMMANDS[command]);
       android.createMessage();
-      command_send_timer = millis();
-    }
   }
   if (millis() - updateSubdisplayInterval >= 300) {
     renderSubdisplay();

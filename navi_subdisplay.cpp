@@ -26,7 +26,6 @@ void NaviSubDisplay::render() {
     SPI.transfer(latchAddress[l] | latchesData[l][DATA_SIZE]);
 
     SPI.endTransaction();
-
     digitalWrite(SLAVE_PIN, HIGH);
     digitalWrite(SLAVE_PIN, LOW);
 
