@@ -10,8 +10,10 @@ uint8_t bonnetMessage = 0x00;
 uint8_t trunkMessage = 0x00;
 
 void BCAN::begin() {
+  pinMode(CAN_SPI_PIN, OUTPUT);
   pinMode(aumode, OUTPUT);
   pinMode(aunstb, OUTPUT);
+  digitalWrite(CAN_SPI_PIN, HIGH);
   digitalWrite(aunstb, HIGH);
   digitalWrite(aumode, HIGH);
   car.reset();
@@ -33,9 +35,11 @@ bool BCAN::read() {
     doorsStateUpdated = false;
     return true;
   }
+  digitalWrite(CAN_SPI_PIN, LOW);
   if (car.readMessage(&canMsg) == MCP2515::ERROR_OK) {
     updateStructure();
   }
+  digitalWrite(CAN_SPI_PIN, HIGH);
   return false;
 }
 
