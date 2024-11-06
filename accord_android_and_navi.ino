@@ -33,6 +33,7 @@ void setup() {
 }
 
 void loop() {
+  subDisplay.resetSubdisplay();  
   bool isRead = can.read();
   if (isRead) {
     android.createDoorsMessage(can.getDoorsState());    

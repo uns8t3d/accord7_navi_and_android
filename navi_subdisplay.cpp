@@ -4,32 +4,32 @@
 SPISettings settings(38000, MSBFIRST, SPI_MODE0);
 byte latchesData[4][LATCH_SIZE];
 
+unsigned long resetTimer = 0;
+bool isResetActive = false;
+
 NaviSubDisplay::NaviSubDisplay() {
 
 }
 
 void NaviSubDisplay::begin() {
+  pinMode(RESET_PIN, OUTPUT);
+  digitalWrite(RESET_PIN, LOW);
   pinMode(SLAVE_PIN, OUTPUT);
   digitalWrite(SLAVE_PIN, LOW);
-
   SPI.begin();
 }
 
 void NaviSubDisplay::render() {
   for (byte l = 0; l < 4; l++) {
     SPI.beginTransaction(settings);
-
+    digitalWrite(SLAVE_PIN, LOW);
     for (byte i = 0; i < DATA_SIZE; i++) {
       SPI.transfer(latchesData[l][i]);
+      delayMicroseconds(10);
     }
-
     SPI.transfer(latchAddress[l] | latchesData[l][DATA_SIZE]);
-
-    SPI.endTransaction();
     digitalWrite(SLAVE_PIN, HIGH);
-    digitalWrite(SLAVE_PIN, LOW);
-
-    //delay(5);
+    SPI.endTransaction();
   }
 }
 
@@ -131,4 +131,17 @@ void NaviSubDisplay::clock(byte hours, byte minutes, boolean showPoints) {
   latchesData[1][5] |= 0b00000010 << shift;
   latchesData[2][5] |= 0b00000110 << shift;
   latchesData[3][5] |= 0b00000010 << shift;*/
+}
+
+void NaviSubDisplay::resetSubdisplay() {
+  if (!isResetActive && micros() - resetTimer >= 25000) {
+    digitalWrite(RESET_PIN, LOW);
+    resetTimer = micros();
+    isResetActive = true;    
+  }
+  if (isResetActive && micros() - resetTimer >= 3500) {
+    digitalWrite(RESET_PIN, HIGH);
+    resetTimer = micros();
+    isResetActive = false;    
+  }
 }

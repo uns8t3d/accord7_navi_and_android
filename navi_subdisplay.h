@@ -7,6 +7,7 @@
 #define LATCH_SIZE 7
 #define DATA_SIZE 6
 #define SLAVE_PIN 4
+#define RESET_PIN 2
 
 const byte asciiMap[95][4] = {
   { 0, 0, 0, 0 }, // SPACE - ASCII 32
@@ -194,6 +195,7 @@ class NaviSubDisplay {
     void setClimatTemp(uint16_t dTemp, uint16_t pTemp);
     void clear();
     void clock(byte hours, byte minutes, boolean showPoints);
+    void resetSubdisplay();
   private:
 };
 
